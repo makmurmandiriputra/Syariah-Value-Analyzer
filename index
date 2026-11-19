@@ -1,0 +1,2371 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Syariah Value Analyzer — Fundamental &amp; Intrinsic Value Calculator</title>
+
+  <!-- Google Fonts: Inter & JetBrains Mono untuk presisi tabular-nums -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          },
+          colors: {
+            obsidian: '#09090B',
+            charcoal: '#18181B',
+            alabaster: '#FAFAFA'
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Chart.js via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+  <style>
+    /* Pengaturan tipografi tabular-nums & gaya monokrom institusional */
+    body {
+      background-color: #FAFAFA;
+      color: #09090B;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Hilangkan spinner default input number agar bersih */
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+
+    /* Custom Scrollbar Monokrom */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #FAFAFA;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #D4D4D8;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #71717A;
+    }
+
+    /* Tooltip Interaktif Monokrom */
+    .tooltip-wrapper {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+    .tooltip-content {
+      visibility: hidden;
+      opacity: 0;
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      width: 260px;
+      background-color: #09090B;
+      color: #FAFAFA;
+      border: 1px solid #3F3F46;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      line-height: 1.45;
+      font-weight: 400;
+      font-family: 'Inter', sans-serif;
+      z-index: 60;
+      box-shadow: 0 10px 25px -5px rgba(9, 9, 11, 0.25);
+      transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s;
+      pointer-events: none;
+      text-align: left;
+      text-transform: none;
+      letter-spacing: normal;
+    }
+    .tooltip-content::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: #09090B transparent transparent transparent;
+    }
+    .tooltip-wrapper:hover .tooltip-content,
+    .tooltip-wrapper:focus-within .tooltip-content {
+      visibility: visible;
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Pattern garis diagonal halus untuk kartu non-eligible / indikator */
+    .hatch-pattern {
+      background-image: repeating-linear-gradient(
+        -45deg,
+        #FAFAFA,
+        #FAFAFA 6px,
+        #F4F4F5 6px,
+        #F4F4F5 12px
+      );
+    }
+
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      body {
+        background: #FFFFFF !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-zinc-900 selection:text-white">
+
+  <!-- ===================================================================== -->
+  <!-- TOP NAVIGATION & INSTITUTIONAL HEADER                                 -->
+  <!-- ===================================================================== -->
+  <header class="bg-white border-b border-zinc-200 sticky top-0 z-40">
+    <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 bg-zinc-950 text-white rounded flex items-center justify-center font-mono font-bold text-sm tracking-tighter shrink-0">
+          SVA
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-bold tracking-tight text-zinc-950">
+              Syariah Value Analyzer
+            </h1>
+            <span class="hidden sm:inline-flex items-center px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider bg-zinc-100 text-zinc-700 border border-zinc-200 rounded">
+              Institutional Terminal
+            </span>
+          </div>
+          <p class="text-xs text-zinc-500">
+            Fundamental Screener, Shariah Compliance Gate &amp; Intrinsic Value Calculator
+          </p>
+        </div>
+      </div>
+
+      <!-- Tombol Utilitas Global -->
+      <div class="flex flex-wrap items-center gap-2 no-print">
+        <button
+          type="button"
+          id="btnResetForm"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-zinc-700 bg-white border border-zinc-300 rounded hover:bg-zinc-100 hover:text-zinc-950 transition-colors"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Reset / Kosongkan Form
+        </button>
+
+        <button
+          type="button"
+          id="btnLoadSheets"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-zinc-900 bg-zinc-100 border border-zinc-300 rounded hover:bg-zinc-200 transition-colors"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+          </svg>
+          Muat Data dari Sheets
+        </button>
+
+        <button
+          type="button"
+          id="btnSaveSheets"
+          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-zinc-900 border border-zinc-900 rounded hover:bg-zinc-800 transition-colors shadow-sm"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+          </svg>
+          Simpan ke Google Sheets
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================================================================== -->
+  <!-- PANEL KONEKSI GOOGLE SHEETS (AUTO-HIDE JIKA MODE NATIVE GAS)          -->
+  <!-- ===================================================================== -->
+  <section id="gasConnectionBar" class="bg-zinc-100/80 border-b border-zinc-200 no-print">
+    <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+      <div class="flex items-center gap-2 text-xs text-zinc-600 shrink-0">
+        <span id="connectionDot" class="w-2 h-2 rounded-full bg-zinc-400"></span>
+        <span class="font-semibold text-zinc-900">Koneksi Google Sheets:</span>
+        <span id="connectionStatusLabel">Mode Eksternal (REST API Web App URL)</span>
+      </div>
+
+      <div id="webAppUrlControls" class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-1 max-w-2xl">
+        <input
+          type="url"
+          id="gasWebAppUrl"
+          placeholder="Tempel Google Apps Script Web App URL (https://script.google.com/macros/s/.../exec)"
+          class="flex-1 bg-white border border-zinc-300 rounded px-3 py-1.5 text-xs font-mono text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-900"
+        />
+        <button
+          type="button"
+          id="btnSaveUrl"
+          class="px-3 py-1.5 text-xs font-medium bg-zinc-900 text-white rounded hover:bg-zinc-800 transition-colors shrink-0"
+        >
+          Simpan URL
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- PANEL RIWAYAT DATA GOOGLE SHEETS (COLLAPSIBLE DRAWER / TABLE)         -->
+  <!-- ===================================================================== -->
+  <section id="sheetsHistorySection" class="hidden bg-white border-b border-zinc-200 shadow-sm no-print">
+    <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-5">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h2 class="text-sm font-bold text-zinc-950 uppercase tracking-wider">
+            Riwayat Analisis Tersimpan — Sheet: <span class="font-mono">Database_Emiten</span>
+          </h2>
+          <p class="text-xs text-zinc-500 mt-0.5">
+            Klik <strong>Muat</strong> untuk mengisi ulang angka laporan keuangan ke kalkulator, atau <strong>Hapus</strong> untuk menghapus baris dari Google Sheets.
+          </p>
+        </div>
+        <button
+          type="button"
+          id="btnCloseHistory"
+          class="px-2.5 py-1 text-xs font-medium text-zinc-600 border border-zinc-300 rounded hover:bg-zinc-100 hover:text-zinc-950"
+        >
+          Tutup Panel &times;
+        </button>
+      </div>
+
+      <div class="overflow-x-auto border border-zinc-200 rounded-md">
+        <table class="min-w-full divide-y divide-zinc-200 text-xs">
+          <thead class="bg-zinc-950 text-white">
+            <tr>
+              <th class="px-3 py-2.5 text-left font-semibold uppercase tracking-wider">Ticker</th>
+              <th class="px-3 py-2.5 text-left font-semibold uppercase tracking-wider">Perusahaan</th>
+              <th class="px-3 py-2.5 text-left font-semibold uppercase tracking-wider">Periode</th>
+              <th class="px-3 py-2.5 text-left font-semibold uppercase tracking-wider">Sektor</th>
+              <th class="px-3 py-2.5 text-right font-semibold uppercase tracking-wider">Harga</th>
+              <th class="px-3 py-2.5 text-right font-semibold uppercase tracking-wider">Nilai Wajar</th>
+              <th class="px-3 py-2.5 text-right font-semibold uppercase tracking-wider">Max Buy</th>
+              <th class="px-3 py-2.5 text-center font-semibold uppercase tracking-wider">Skor</th>
+              <th class="px-3 py-2.5 text-left font-semibold uppercase tracking-wider">Rating</th>
+              <th class="px-3 py-2.5 text-right font-semibold uppercase tracking-wider">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="sheetsHistoryBody" class="divide-y divide-zinc-200 bg-white">
+            <tr>
+              <td colspan="10" class="px-4 py-6 text-center text-zinc-500">
+                Memuat data dari Google Sheets...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- MAIN WORKSPACE: 2 KOLOM RESPONSIF (KIRI: INPUT, KANAN: HASIL ANALISIS) -->
+  <!-- ===================================================================== -->
+  <main class="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+      <!-- =================================================================== -->
+      <!-- KOLOM KIRI (5 KOLOM GRID): FORM INPUT LAPORAN KEUANGAN              -->
+      <!-- =================================================================== -->
+      <div class="lg:col-span-5 space-y-5">
+        <form id="analyzerForm" class="space-y-5" autocomplete="off">
+
+          <!-- 1. IDENTITAS EMITEN -->
+          <div class="bg-white border border-zinc-200 rounded-md p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+            <div class="flex items-center justify-between border-b border-zinc-100 pb-3 mb-4">
+              <div class="flex items-center gap-2">
+                <span class="w-5 h-5 rounded bg-zinc-900 text-white font-mono text-[11px] font-bold flex items-center justify-center">1</span>
+                <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-900">Identitas Emiten &amp; Filter Syariah</h2>
+              </div>
+              <span class="text-[11px] font-mono text-zinc-400">PROFIL</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label for="ticker" class="block text-xs font-medium text-zinc-700 mb-1">
+                  Kode Saham (Ticker) <span class="text-zinc-950 font-bold">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="ticker"
+                  placeholder="Contoh: ANTM"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm font-mono uppercase font-semibold text-zinc-950 placeholder:text-zinc-400 placeholder:font-normal focus:outline-none focus:border-zinc-950"
+                />
+              </div>
+
+              <div>
+                <label for="period" class="block text-xs font-medium text-zinc-700 mb-1">
+                  Periode Laporan
+                </label>
+                <input
+                  type="text"
+                  id="period"
+                  placeholder="Contoh: FY 2026 / 9M 2026"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm font-mono text-zinc-950 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-950"
+                />
+              </div>
+
+              <div class="sm:col-span-2">
+                <label for="company_name" class="block text-xs font-medium text-zinc-700 mb-1">
+                  Nama Perusahaan
+                </label>
+                <input
+                  type="text"
+                  id="company_name"
+                  placeholder="Contoh: PT Aneka Tambang Tbk"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm text-zinc-950 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-950"
+                />
+              </div>
+
+              <div class="sm:col-span-2">
+                <div class="flex items-center justify-between mb-1">
+                  <label for="sector_type" class="text-xs font-medium text-zinc-700">
+                    Kategori Sektor Bisnis
+                  </label>
+                  <div class="tooltip-wrapper">
+                    <button type="button" class="w-4 h-4 rounded-full border border-zinc-300 text-[10px] font-mono text-zinc-500 hover:text-zinc-950 hover:border-zinc-950 flex items-center justify-center" aria-label="Penjelasan Sektor">?</button>
+                    <div class="tooltip-content">
+                      Menentukan batas diskon aman (Margin of Safety): Defensive (20%) untuk bisnis stabil, Growth (25%) untuk bertumbuh, dan Cyclical (35%) untuk saham komoditas yang labanya naik-turun mengikuti harga pasar.
+                    </div>
+                  </div>
+                </div>
+                <select
+                  id="sector_type"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm text-zinc-950 focus:outline-none focus:border-zinc-950"
+                >
+                  <option value="DEFENSIVE">DEFENSIVE — Konsumer / Telko Blue Chip (MoS 20%)</option>
+                  <option value="GROWTH">GROWTH — Bertumbuh Menengah (MoS 25%)</option>
+                  <option value="CYCLICAL">CYCLICAL — Komoditas / Tambang / Unggas (MoS 35%)</option>
+                </select>
+              </div>
+
+              <!-- Checkbox Status Bisnis Utama Halal -->
+              <div class="sm:col-span-2 pt-1">
+                <label class="flex items-start gap-3 p-3 rounded border border-zinc-300 bg-zinc-50/70 hover:bg-zinc-100/70 cursor-pointer transition-colors">
+                  <input
+                    type="checkbox"
+                    id="is_halal_core_business"
+                    class="mt-0.5 w-4 h-4 accent-zinc-950 border-zinc-400 rounded cursor-pointer"
+                  />
+                  <div class="text-xs">
+                    <span class="font-semibold text-zinc-950 block">
+                      Status Bisnis Utama Halal (Core Business Compliant)
+                    </span>
+                    <span class="text-zinc-500 leading-relaxed block mt-0.5">
+                      Centang jika kegiatan usaha inti perusahaan bebas dari jasa keuangan ribawi, perjudian, minuman keras, rokok, dan barang/jasa haram lainnya.
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. DATA PASAR & HISTORIS -->
+          <div class="bg-white border border-zinc-200 rounded-md p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+            <div class="flex items-center justify-between border-b border-zinc-100 pb-3 mb-4">
+              <div class="flex items-center gap-2">
+                <span class="w-5 h-5 rounded bg-zinc-900 text-white font-mono text-[11px] font-bold flex items-center justify-center">2</span>
+                <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-900">Data Pasar &amp; Valuasi Historis</h2>
+              </div>
+              <span class="text-[11px] font-mono text-zinc-400">MARKET</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label for="current_price" class="text-xs font-medium text-zinc-700">Harga Saham Saat Ini (Rp)</label>
+                  <span id="hint_current_price" class="text-[10px] font-mono text-zinc-400"></span>
+                </div>
+                <input
+                  type="number"
+                  step="any"
+                  id="current_price"
+                  placeholder="0"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm tabular-nums text-zinc-950 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-950"
+                />
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label for="shares_outstanding" class="text-xs font-medium text-zinc-700">Jumlah Saham Beredar (Lbr)</label>
+                  <div class="tooltip-wrapper">
+                    <button type="button" class="w-4 h-4 rounded-full border border-zinc-300 text-[10px] font-mono text-zinc-500 hover:text-zinc-950 flex items-center justify-center">?</button>
+                    <div class="tooltip-content">
+                      Total lembar saham beredar penuh (bukan lot). 1 lot = 100 lembar. Digunakan untuk menghitung Laba per Saham (EPS) dan Nilai Buku per Saham (BVPS).
+                    </div>
+                  </div>
+                </div>
+                <input
+                  type="number"
+                  step="any"
+                  id="shares_outstanding"
+                  placeholder="0"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm tabular-nums text-zinc-950 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-950"
+                />
+                <p id="hint_shares_outstanding" class="text-[10px] font-mono text-zinc-400 mt-1 h-3.5"></p>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label for="hist_avg_per_5y" class="text-xs font-medium text-zinc-700">Rata-rata PER Historis 5 Thn</label>
+                  <div class="tooltip-wrapper">
+                    <button type="button" class="w-4 h-4 rounded-full border border-zinc-300 text-[10px] font-mono text-zinc-500 hover:text-zinc-950 flex items-center justify-center">?</button>
+                    <div class="tooltip-content">
+                      Price to Earnings Ratio rata-rata selama 5 tahun terakhir. Menunjukkan berapa kali lipat laba tahunan yang biasanya bersedia dibayar pasar untuk saham ini.
+                    </div>
+                  </div>
+                </div>
+                <input
+                  type="number"
+                  step="any"
+                  id="hist_avg_per_5y"
+                  placeholder="0.0"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm tabular-nums text-zinc-950 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-950"
+                />
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label for="hist_avg_pbv_5y" class="text-xs font-medium text-zinc-700">Rata-rata PBV Historis 5 Thn</label>
+                  <div class="tooltip-wrapper">
+                    <button type="button" class="w-4 h-4 rounded-full border border-zinc-300 text-[10px] font-mono text-zinc-500 hover:text-zinc-950 flex items-center justify-center">?</button>
+                    <div class="tooltip-content">
+                      Price to Book Value rata-rata 5 tahun. Membandingkan harga pasar saham dengan nilai modal bersih (ekuitas) perusahaan per lembar saham.
+                    </div>
+                  </div>
+                </div>
+                <input
+                  type="number"
+                  step="any"
+                  id="hist_avg_pbv_5y"
+                  placeholder="0.0"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm tabular-nums text-zinc-950 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-950"
+                />
+              </div>
+
+              <div class="sm:col-span-2">
+                <div class="flex items-center justify-between mb-1">
+                  <label for="dividend_per_share" class="text-xs font-medium text-zinc-700">Dividen Tunai per Saham Terakhir (Rp)</label>
+                  <div class="tooltip-wrapper">
+                    <button type="button" class="w-4 h-4 rounded-full border border-zinc-300 text-[10px] font-mono text-zinc-500 hover:text-zinc-950 flex items-center justify-center">?</button>
+                    <div class="tooltip-content">
+                      Total dividen tunai per lembar saham dalam 1 tahun buku terakhir. Dipakai menghitung Dividend Yield serta porsi dana non-halal yang wajib disucikan (cleansing).
+                    </div>
+                  </div>
+                </div>
+                <input
+                  type="number"
+                  step="any"
+                  id="dividend_per_share"
+                  placeholder="0"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm tabular-nums text-zinc-950 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-950"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. LAPORAN LABA RUGI (INCOME STATEMENT) -->
+          <div class="bg-white border border-zinc-200 rounded-md p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+            <div class="flex items-center justify-between border-b border-zinc-100 pb-3 mb-4">
+              <div class="flex items-center gap-2">
+                <span class="w-5 h-5 rounded bg-zinc-900 text-white font-mono text-[11px] font-bold flex items-center justify-center">3</span>
+                <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-900">Laporan Laba Rugi (Income Statement)</h2>
+              </div>
+              <span class="text-[11px] font-mono text-zinc-400">RUPIAH PENUH</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label for="revenue_current" class="block text-xs font-medium text-zinc-700 mb-1">Pendapatan Berjalan / TTM (Rp)</label>
+                <input
+                  type="number"
+                  step="any"
+                  id="revenue_current"
+                  placeholder="0"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm tabular-nums text-zinc-950 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-950"
+                />
+                <p id="hint_revenue_current" class="text-[10px] font-mono text-zinc-400 mt-1 h-3.5"></p>
+              </div>
+
+              <div>
+                <label for="revenue_prev_year" class="block text-xs font-medium text-zinc-700 mb-1">Pendapatan Tahun Sebelumnya (Rp)</label>
+                <input
+                  type="number"
+                  step="any"
+                  id="revenue_prev_year"
+                  placeholder="0"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm tabular-nums text-zinc-950 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-950"
+                />
+                <p id="hint_revenue_prev_year" class="text-[10px] font-mono text-zinc-400 mt-1 h-3.5"></p>
+              </div>
+
+              <div>
+                <label for="gross_profit" class="block text-xs font-medium text-zinc-700 mb-1">Laba Kotor (Gross Profit) (Rp)</label>
+                <input
+                  type="number"
+                  step="any"
+                  id="gross_profit"
+                  placeholder="0"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm tabular-nums text-zinc-950 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-950"
+                />
+                <p id="hint_gross_profit" class="text-[10px] font-mono text-zinc-400 mt-1 h-3.5"></p>
+              </div>
+
+              <div>
+                <label for="operating_profit" class="block text-xs font-medium text-zinc-700 mb-1">Laba Usaha / EBIT (Rp)</label>
+                <input
+                  type="number"
+                  step="any"
+                  id="operating_profit"
+                  placeholder="0"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm tabular-nums text-zinc-950 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-950"
+                />
+                <p id="hint_operating_profit" class="text-[10px] font-mono text-zinc-400 mt-1 h-3.5"></p>
+              </div>
+
+              <div>
+                <label for="net_profit" class="block text-xs font-medium text-zinc-700 mb-1">Laba Bersih (Net Profit) (Rp)</label>
+                <input
+                  type="number"
+                  step="any"
+                  id="net_profit"
+                  placeholder="0"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm tabular-nums text-zinc-950 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-950"
+                />
+                <p id="hint_net_profit" class="text-[10px] font-mono text-zinc-400 mt-1 h-3.5"></p>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label for="non_halal_income" class="text-xs font-medium text-zinc-700">Pendapatan Non-Halal / Bunga (Rp)</label>
+                  <div class="tooltip-wrapper">
+                    <button type="button" class="w-4 h-4 rounded-full border border-zinc-300 text-[10px] font-mono text-zinc-500 hover:text-zinc-950 flex items-center justify-center">?</button>
+                    <div class="tooltip-content">
+                      Pendapatan bunga jasa giro bank konvensional atau pendapatan non-halal lainnya di catatan laporan keuangan. Batas maksimal syariah adalah 10% dari total pendapatan.
+                    </div>
+                  </div>
+                </div>
+                <input
+                  type="number"
+                  step="any"
+                  id="non_halal_income"
+                  placeholder="0"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm tabular-nums text-zinc-950 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-950"
+                />
+                <p id="hint_non_halal_income" class="text-[10px] font-mono text-zinc-400 mt-1 h-3.5"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. NERACA KEUANGAN (BALANCE SHEET) -->
+          <div class="bg-white border border-zinc-200 rounded-md p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+            <div class="flex items-center justify-between border-b border-zinc-100 pb-3 mb-4">
+              <div class="flex items-center gap-2">
+                <span class="w-5 h-5 rounded bg-zinc-900 text-white font-mono text-[11px] font-bold flex items-center justify-center">4</span>
+                <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-900">Neraca Keuangan (Balance Sheet)</h2>
+              </div>
+              <span class="text-[11px] font-mono text-zinc-400">RUPIAH PENUH</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label for="cash_and_equivalents" class="block text-xs font-medium text-zinc-700 mb-1">Kas &amp; Setara Kas (Rp)</label>
+                <input
+                  type="number"
+                  step="any"
+                  id="cash_and_equivalents"
+                  placeholder="0"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm tabular-nums text-zinc-950 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-950"
+                />
+                <p id="hint_cash_and_equivalents" class="text-[10px] font-mono text-zinc-400 mt-1 h-3.5"></p>
+              </div>
+
+              <div>
+                <label for="current_assets" class="block text-xs font-medium text-zinc-700 mb-1">Total Aset Lancar (Rp)</label>
+                <input
+                  type="number"
+                  step="any"
+                  id="current_assets"
+                  placeholder="0"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm tabular-nums text-zinc-950 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-950"
+                />
+                <p id="hint_current_assets" class="text-[10px] font-mono text-zinc-400 mt-1 h-3.5"></p>
+              </div>
+
+              <div>
+                <label for="total_assets" class="block text-xs font-medium text-zinc-700 mb-1">Total Aset (Rp)</label>
+                <input
+                  type="number"
+                  step="any"
+                  id="total_assets"
+                  placeholder="0"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm tabular-nums text-zinc-950 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-950"
+                />
+                <p id="hint_total_assets" class="text-[10px] font-mono text-zinc-400 mt-1 h-3.5"></p>
+              </div>
+
+              <div>
+                <label for="current_liabilities" class="block text-xs font-medium text-zinc-700 mb-1">Liabilitas Jangka Pendek (Rp)</label>
+                <input
+                  type="number"
+                  step="any"
+                  id="current_liabilities"
+                  placeholder="0"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm tabular-nums text-zinc-950 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-950"
+                />
+                <p id="hint_current_liabilities" class="text-[10px] font-mono text-zinc-400 mt-1 h-3.5"></p>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label for="interest_bearing_debt" class="text-xs font-medium text-zinc-700">Total Utang Berbunga (Rp)</label>
+                  <div class="tooltip-wrapper">
+                    <button type="button" class="w-4 h-4 rounded-full border border-zinc-300 text-[10px] font-mono text-zinc-500 hover:text-zinc-950 flex items-center justify-center">?</button>
+                    <div class="tooltip-content">
+                      Seluruh pinjaman bank berbasis bunga, obligasi konvensional, dan sewa pembiayaan berbunga (jangka pendek + panjang). Batas syariah maksimal 45% dari Total Aset.
+                    </div>
+                  </div>
+                </div>
+                <input
+                  type="number"
+                  step="any"
+                  id="interest_bearing_debt"
+                  placeholder="0"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm tabular-nums text-zinc-950 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-950"
+                />
+                <p id="hint_interest_bearing_debt" class="text-[10px] font-mono text-zinc-400 mt-1 h-3.5"></p>
+              </div>
+
+              <div>
+                <label for="total_equity" class="block text-xs font-medium text-zinc-700 mb-1">Total Ekuitas Pemilik (Rp)</label>
+                <input
+                  type="number"
+                  step="any"
+                  id="total_equity"
+                  placeholder="0"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm tabular-nums text-zinc-950 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-950"
+                />
+                <p id="hint_total_equity" class="text-[10px] font-mono text-zinc-400 mt-1 h-3.5"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. LAPORAN ARUS KAS (CASH FLOW STATEMENT) -->
+          <div class="bg-white border border-zinc-200 rounded-md p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+            <div class="flex items-center justify-between border-b border-zinc-100 pb-3 mb-4">
+              <div class="flex items-center gap-2">
+                <span class="w-5 h-5 rounded bg-zinc-900 text-white font-mono text-[11px] font-bold flex items-center justify-center">5</span>
+                <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-900">Laporan Arus Kas (Cash Flow)</h2>
+              </div>
+              <span class="text-[11px] font-mono text-zinc-400">RUPIAH PENUH</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label for="operating_cash_flow" class="text-xs font-medium text-zinc-700">Arus Kas Operasi / OCF (Rp)</label>
+                  <div class="tooltip-wrapper">
+                    <button type="button" class="w-4 h-4 rounded-full border border-zinc-300 text-[10px] font-mono text-zinc-500 hover:text-zinc-950 flex items-center justify-center">?</button>
+                    <div class="tooltip-content">
+                      Operating Cash Flow (OCF): Uang tunai riil yang masuk dari operasional bisnis utama. Perusahaan berkualitas memiliki OCF yang lebih besar atau setara Laba Bersih.
+                    </div>
+                  </div>
+                </div>
+                <input
+                  type="number"
+                  step="any"
+                  id="operating_cash_flow"
+                  placeholder="0"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm tabular-nums text-zinc-950 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-950"
+                />
+                <p id="hint_operating_cash_flow" class="text-[10px] font-mono text-zinc-400 mt-1 h-3.5"></p>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label for="capex" class="text-xs font-medium text-zinc-700">Belanja Modal / CapEx (Rp)</label>
+                  <div class="tooltip-wrapper">
+                    <button type="button" class="w-4 h-4 rounded-full border border-zinc-300 text-[10px] font-mono text-zinc-500 hover:text-zinc-950 flex items-center justify-center">?</button>
+                    <div class="tooltip-content">
+                      Capital Expenditure (input angka positif): Biaya pembelian aset tetap/pabrik/mesin untuk menjaga dan menumbuhkan bisnis. FCF = OCF dikurangi CapEx.
+                    </div>
+                  </div>
+                </div>
+                <input
+                  type="number"
+                  step="any"
+                  min="0"
+                  id="capex"
+                  placeholder="0 (input angka positif)"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm tabular-nums text-zinc-950 placeholder:text-zinc-300 focus:outline-none focus:border-zinc-950"
+                />
+                <p id="hint_capex" class="text-[10px] font-mono text-zinc-400 mt-1 h-3.5"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 6. ASUMSI VALUASI DCF -->
+          <div class="bg-white border border-zinc-200 rounded-md p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+            <div class="flex items-center justify-between border-b border-zinc-100 pb-3 mb-4">
+              <div class="flex items-center gap-2">
+                <span class="w-5 h-5 rounded bg-zinc-900 text-white font-mono text-[11px] font-bold flex items-center justify-center">6</span>
+                <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-900">Asumsi Valuasi DCF (10 Tahun)</h2>
+              </div>
+              <span class="text-[11px] font-mono text-zinc-400">PARAMETER (%)</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label for="projected_growth_rate" class="text-xs font-medium text-zinc-700">Growth 10Y (%)</label>
+                  <div class="tooltip-wrapper">
+                    <button type="button" class="w-4 h-4 rounded-full border border-zinc-300 text-[10px] font-mono text-zinc-500 hover:text-zinc-950 flex items-center justify-center">?</button>
+                    <div class="tooltip-content">
+                      Estimasi rata-rata pertumbuhan Arus Kas Bebas (FCF) tahunan selama 10 tahun ke depan. Default konservatif: 7%.
+                    </div>
+                  </div>
+                </div>
+                <input
+                  type="number"
+                  step="any"
+                  id="projected_growth_rate"
+                  value="7"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm tabular-nums text-zinc-950 focus:outline-none focus:border-zinc-950"
+                />
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label for="terminal_growth_rate" class="text-xs font-medium text-zinc-700">Terminal (%)</label>
+                  <div class="tooltip-wrapper">
+                    <button type="button" class="w-4 h-4 rounded-full border border-zinc-300 text-[10px] font-mono text-zinc-500 hover:text-zinc-950 flex items-center justify-center">?</button>
+                    <div class="tooltip-content">
+                      Pertumbuhan abadi perusahaan setelah tahun ke-10 (umumnya setara inflasi jangka panjang / pertumbuhan PDB konservatif 2%–3%). Default: 3%.
+                    </div>
+                  </div>
+                </div>
+                <input
+                  type="number"
+                  step="any"
+                  id="terminal_growth_rate"
+                  value="3"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm tabular-nums text-zinc-950 focus:outline-none focus:border-zinc-950"
+                />
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label for="discount_rate" class="text-xs font-medium text-zinc-700">Discount (%)</label>
+                  <div class="tooltip-wrapper">
+                    <button type="button" class="w-4 h-4 rounded-full border border-zinc-300 text-[10px] font-mono text-zinc-500 hover:text-zinc-950 flex items-center justify-center">?</button>
+                    <div class="tooltip-content">
+                      Tingkat imbal hasil tahunan minimal yang Anda harapkan sebagai kompensasi risiko investasi saham (WACC / Required Return). Default: 12%.
+                    </div>
+                  </div>
+                </div>
+                <input
+                  type="number"
+                  step="any"
+                  id="discount_rate"
+                  value="12"
+                  class="w-full bg-white border border-zinc-300 rounded px-3 py-2 text-sm tabular-nums text-zinc-950 focus:outline-none focus:border-zinc-950"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- TOMBOL TRIGGER KALKULASI -->
+          <div class="pt-1 no-print">
+            <button
+              type="button"
+              id="btnCalculateNow"
+              class="w-full py-3 px-4 bg-zinc-900 text-white text-sm font-semibold rounded-md hover:bg-zinc-800 active:bg-zinc-950 transition-colors flex items-center justify-center gap-2 shadow-sm"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              Hitung Rating &amp; Harga Wajar
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- =================================================================== -->
+      <!-- KOLOM KANAN (7 KOLOM GRID): DASHBOARD HASIL & ANALISIS VALUASI      -->
+      <!-- =================================================================== -->
+      <div class="lg:col-span-7 space-y-5 lg:sticky lg:top-20">
+
+        <!-- A. HERO RATING & SKOR KELAYAKAN (0 - 100) -->
+        <div class="bg-white border border-zinc-200 rounded-md p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-zinc-200 pb-5">
+            <div>
+              <div class="flex items-center gap-2">
+                <span id="outTickerBadge" class="px-2 py-0.5 text-xs font-mono font-bold bg-zinc-950 text-white rounded">
+                  EMITEN
+                </span>
+                <span id="outPeriodBadge" class="text-xs font-mono text-zinc-500">
+                  PERIODE —
+                </span>
+                <span id="outSectorBadge" class="text-[11px] font-mono px-2 py-0.5 bg-zinc-100 text-zinc-700 border border-zinc-200 rounded">
+                  DEFENSIVE
+                </span>
+              </div>
+              <h2 id="outCompanyName" class="text-xl font-bold text-zinc-950 mt-2 tracking-tight">
+                Menunggu Input Data Emiten
+              </h2>
+              <p class="text-xs text-zinc-500 mt-0.5">
+                Hasil evaluasi kelayakan syariah, kekuatan neraca, kualitas kas &amp; valuasi intrinsik.
+              </p>
+            </div>
+
+            <!-- Skor Bulat / Kotak Presisi -->
+            <div class="flex items-center gap-4 bg-zinc-50 border border-zinc-200 rounded-md px-4 py-3 shrink-0">
+              <div class="text-right">
+                <span class="block text-[10px] font-mono uppercase tracking-wider text-zinc-500">Total Skor</span>
+                <div class="flex items-baseline justify-end gap-1">
+                  <span id="outTotalScore" class="text-3xl font-extrabold tabular-nums text-zinc-950">0</span>
+                  <span class="text-xs font-mono text-zinc-400">/100</span>
+                </div>
+              </div>
+              <div class="w-12 h-12 rounded-full border-4 border-zinc-900 flex items-center justify-center bg-white">
+                <span id="outGradeLetter" class="font-mono font-extrabold text-lg text-zinc-950">—</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lencana Status Rating Utama -->
+          <div class="mt-4">
+            <div
+              id="outRatingBadge"
+              class="w-full px-4 py-3 rounded text-xs sm:text-sm font-bold tracking-wide bg-white text-zinc-900 border-2 border-zinc-900 flex items-center justify-between"
+            >
+              <span>REJECTED — TIDAK LOLOS FILTER SYARIAH</span>
+              <span class="font-mono text-[11px] uppercase opacity-80">STATUS KELAYAKAN</span>
+            </div>
+          </div>
+
+          <!-- Panel Detail Pelanggaran Gerbang Syariah (Hard Gate) -->
+          <div id="shariahGateBox" class="mt-4 p-4 rounded border border-zinc-300 hatch-pattern">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs font-bold uppercase tracking-wider text-zinc-950 flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-zinc-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Gerbang Eliminasi Syariah (Hard Gate)
+              </span>
+              <span id="shariahGateStatusPill" class="text-[11px] font-mono font-semibold px-2 py-0.5 bg-zinc-950 text-white rounded">
+                BELUM LOLOS
+              </span>
+            </div>
+            <ul id="shariahViolationList" class="text-xs text-zinc-700 space-y-1 list-disc list-inside mt-2">
+              <li>Status Bisnis Utama Halal belum dicentang/terkonfirmasi.</li>
+            </ul>
+          </div>
+
+          <!-- Breakdown 4 Pilar Skor (Max 25 Poin per Pilar) -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-zinc-100">
+            <div class="p-3 rounded bg-zinc-50 border border-zinc-200">
+              <span class="text-[11px] text-zinc-500 block">1. Keamanan Neraca</span>
+              <div class="flex items-baseline justify-between mt-1">
+                <span id="scoreBalance" class="text-base font-bold tabular-nums text-zinc-950">0</span>
+                <span class="text-[11px] font-mono text-zinc-400">/ 25 pt</span>
+              </div>
+              <div class="w-full bg-zinc-200 h-1 rounded-full mt-2 overflow-hidden">
+                <div id="barBalance" class="bg-zinc-900 h-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <div class="p-3 rounded bg-zinc-50 border border-zinc-200">
+              <span class="text-[11px] text-zinc-500 block">2. Profitabilitas</span>
+              <div class="flex items-baseline justify-between mt-1">
+                <span id="scoreProfit" class="text-base font-bold tabular-nums text-zinc-950">0</span>
+                <span class="text-[11px] font-mono text-zinc-400">/ 25 pt</span>
+              </div>
+              <div class="w-full bg-zinc-200 h-1 rounded-full mt-2 overflow-hidden">
+                <div id="barProfit" class="bg-zinc-900 h-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <div class="p-3 rounded bg-zinc-50 border border-zinc-200">
+              <span class="text-[11px] text-zinc-500 block">3. Kualitas Kas</span>
+              <div class="flex items-baseline justify-between mt-1">
+                <span id="scoreCash" class="text-base font-bold tabular-nums text-zinc-950">0</span>
+                <span class="text-[11px] font-mono text-zinc-400">/ 25 pt</span>
+              </div>
+              <div class="w-full bg-zinc-200 h-1 rounded-full mt-2 overflow-hidden">
+                <div id="barCash" class="bg-zinc-900 h-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <div class="p-3 rounded bg-zinc-50 border border-zinc-200">
+              <span class="text-[11px] text-zinc-500 block">4. Valuasi &amp; MoS</span>
+              <div class="flex items-baseline justify-between mt-1">
+                <span id="scoreValuation" class="text-base font-bold tabular-nums text-zinc-950">0</span>
+                <span class="text-[11px] font-mono text-zinc-400">/ 25 pt</span>
+              </div>
+              <div class="w-full bg-zinc-200 h-1 rounded-full mt-2 overflow-hidden">
+                <div id="barValuation" class="bg-zinc-900 h-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- B. KARTU HARGA WAJAR VS HARGA BELI MAKSIMAL -->
+        <div class="bg-white border border-zinc-200 rounded-md p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <div class="flex items-center justify-between border-b border-zinc-100 pb-3 mb-4">
+            <div class="flex items-center gap-2">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-950">
+                Valuasi Nilai Intrinsik &amp; Margin of Safety
+              </h3>
+              <div class="tooltip-wrapper">
+                <button type="button" class="w-4 h-4 rounded-full border border-zinc-300 text-[10px] font-mono text-zinc-500 hover:text-zinc-950 flex items-center justify-center">?</button>
+                <div class="tooltip-content">
+                  Margin of Safety (MoS) adalah batas diskon wajib di bawah Harga Wajar untuk melindungi investor dari kesalahan estimasi maupun gejolak pasar.
+                </div>
+              </div>
+            </div>
+            <span id="outMosPill" class="text-[11px] font-mono px-2 py-0.5 bg-zinc-100 text-zinc-800 border border-zinc-200 rounded">
+              MoS Target: 20%
+            </span>
+          </div>
+
+          <!-- 3 Kartu Utama Harga -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            <div class="p-4 rounded border border-zinc-200 bg-zinc-50">
+              <span class="text-[11px] font-medium text-zinc-500 block">Harga Pasar Saat Ini</span>
+              <span id="outCurrentPrice" class="text-xl font-bold tabular-nums text-zinc-950 block mt-1">
+                Rp 0
+              </span>
+              <span id="outDiscountPct" class="text-[11px] font-mono text-zinc-600 block mt-1.5">
+                Potensi Diskon: 0,0%
+              </span>
+            </div>
+
+            <div class="p-4 rounded border-2 border-zinc-950 bg-zinc-950 text-white">
+              <span class="text-[11px] font-medium text-zinc-300 block">Batas Beli Maksimal</span>
+              <span id="outMaxBuyPrice" class="text-xl font-extrabold tabular-nums text-white block mt-1">
+                Rp 0
+              </span>
+              <span id="outPriceActionHint" class="text-[11px] font-mono text-zinc-300 block mt-1.5">
+                Menunggu data harga
+              </span>
+            </div>
+
+            <div class="p-4 rounded border border-zinc-300 bg-white">
+              <span class="text-[11px] font-medium text-zinc-500 block">Harga Wajar Gabungan</span>
+              <span id="outIntrinsicValue" class="text-xl font-bold tabular-nums text-zinc-950 block mt-1">
+                Rp 0
+              </span>
+              <span id="outValuationMethodNote" class="text-[11px] font-mono text-zinc-500 block mt-1.5">
+                Rata-rata metode valid
+              </span>
+            </div>
+          </div>
+
+          <!-- Rincian 3 Metode Valuasi -->
+          <div class="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-zinc-100 text-xs">
+            <div class="flex flex-col">
+              <span class="text-zinc-500 text-[11px]">Valuasi PER 5Y</span>
+              <span id="outFairPer" class="font-bold tabular-nums text-zinc-900 mt-0.5">Rp 0</span>
+              <span id="outFairPerNote" class="text-[10px] font-mono text-zinc-400">Aktif</span>
+            </div>
+            <div class="flex flex-col border-x border-zinc-100 px-3">
+              <span class="text-zinc-500 text-[11px]">Valuasi PBV 5Y</span>
+              <span id="outFairPbv" class="font-bold tabular-nums text-zinc-900 mt-0.5">Rp 0</span>
+              <span class="text-[10px] font-mono text-zinc-400">Aktif</span>
+            </div>
+            <div class="flex flex-col">
+              <span class="text-zinc-500 text-[11px]">Valuasi DCF 10Y</span>
+              <span id="outFairDcf" class="font-bold tabular-nums text-zinc-900 mt-0.5">Rp 0</span>
+              <span class="text-[10px] font-mono text-zinc-400">Aktif</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- C. RED FLAG WARNING ALERTS -->
+        <div class="bg-white border border-zinc-200 rounded-md p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-950">
+              Deteksi Peringatan Dini (Red Flag Alerts)
+            </h3>
+            <span id="outRedFlagCount" class="text-[11px] font-mono px-2 py-0.5 bg-zinc-100 text-zinc-700 border border-zinc-200 rounded">
+              0 Peringatan
+            </span>
+          </div>
+
+          <div id="redFlagContainer" class="space-y-2.5">
+            <div class="p-3.5 rounded bg-zinc-50 border border-zinc-200 text-xs text-zinc-600">
+              Tidak ada red flag terdeteksi pada konfigurasi angka saat ini.
+            </div>
+          </div>
+        </div>
+
+        <!-- D. RINGKASAN RASIO KEUANGAN & KEPATUHAN SYARIAH -->
+        <div class="bg-white border border-zinc-200 rounded-md p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <div class="flex items-center justify-between border-b border-zinc-100 pb-3 mb-4">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-950">
+              Matriks Rasio Fundamental &amp; Syariah
+            </h3>
+            <span id="outNetCashBadge" class="text-[11px] font-mono font-semibold px-2 py-0.5 bg-zinc-100 text-zinc-800 border border-zinc-300 rounded">
+              NET DEBT: Rp 0
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3.5 text-xs">
+            <!-- Syariah & Neraca -->
+            <div class="p-2.5 rounded bg-zinc-50/70 border border-zinc-200/80">
+              <div class="flex items-center justify-between text-zinc-500 text-[11px]">
+                <span>Utang Berbunga / Aset</span>
+                <div class="tooltip-wrapper">
+                  <button type="button" class="w-3.5 h-3.5 rounded-full border border-zinc-300 text-[9px] font-mono flex items-center justify-center">?</button>
+                  <div class="tooltip-content">Batas maksimal syariah OJK/DES adalah 45%. Semakin kecil (&lt;15%) semakin aman dari risiko gagal bayar.</div>
+                </div>
+              </div>
+              <span id="mDebtToAsset" class="font-bold tabular-nums text-sm text-zinc-950 block mt-1">0,00%</span>
+            </div>
+
+            <div class="p-2.5 rounded bg-zinc-50/70 border border-zinc-200/80">
+              <div class="flex items-center justify-between text-zinc-500 text-[11px]">
+                <span>Pendapatan Non-Halal</span>
+                <div class="tooltip-wrapper">
+                  <button type="button" class="w-3.5 h-3.5 rounded-full border border-zinc-300 text-[9px] font-mono flex items-center justify-center">?</button>
+                  <div class="tooltip-content">Rasio pendapatan bunga/non-halal dibanding total pendapatan usaha. Batas maksimal syariah adalah 10%.</div>
+                </div>
+              </div>
+              <span id="mNonHalalRatio" class="font-bold tabular-nums text-sm text-zinc-950 block mt-1">0,00%</span>
+            </div>
+
+            <div class="p-2.5 rounded bg-zinc-50/70 border border-zinc-200/80">
+              <div class="flex items-center justify-between text-zinc-500 text-[11px]">
+                <span>Cleansing Dividen / Sh</span>
+                <div class="tooltip-wrapper">
+                  <button type="button" class="w-3.5 h-3.5 rounded-full border border-zinc-300 text-[9px] font-mono flex items-center justify-center">?</button>
+                  <div class="tooltip-content">Nominal dana per lembar saham yang perlu disisihkan untuk dana sosial/kebajikan guna membersihkan unsur pendapatan non-halal pada dividen.</div>
+                </div>
+              </div>
+              <span id="mCleansing" class="font-bold tabular-nums text-sm text-zinc-950 block mt-1">Rp 0</span>
+            </div>
+
+            <div class="p-2.5 rounded bg-zinc-50/70 border border-zinc-200/80">
+              <div class="flex items-center justify-between text-zinc-500 text-[11px]">
+                <span>Current Ratio</span>
+                <div class="tooltip-wrapper">
+                  <button type="button" class="w-3.5 h-3.5 rounded-full border border-zinc-300 text-[9px] font-mono flex items-center justify-center">?</button>
+                  <div class="tooltip-content">Kemampuan aset lancar melunasi utang jangka pendek. Idealnya di atas 1,50x.</div>
+                </div>
+              </div>
+              <span id="mCurrentRatio" class="font-bold tabular-nums text-sm text-zinc-950 block mt-1">0,00x</span>
+            </div>
+
+            <div class="p-2.5 rounded bg-zinc-50/70 border border-zinc-200/80">
+              <div class="flex items-center justify-between text-zinc-500 text-[11px]">
+                <span>ROE (Return on Equity)</span>
+                <div class="tooltip-wrapper">
+                  <button type="button" class="w-3.5 h-3.5 rounded-full border border-zinc-300 text-[9px] font-mono flex items-center justify-center">?</button>
+                  <div class="tooltip-content">Tingkat pengembalian laba bersih atas modal pemilik. Perusahaan bermoat kuat umumnya konsisten mencetak ROE &ge; 15%–20%.</div>
+                </div>
+              </div>
+              <span id="mRoe" class="font-bold tabular-nums text-sm text-zinc-950 block mt-1">0,00%</span>
+            </div>
+
+            <div class="p-2.5 rounded bg-zinc-50/70 border border-zinc-200/80">
+              <div class="flex items-center justify-between text-zinc-500 text-[11px]">
+                <span>GPM / NPM</span>
+                <div class="tooltip-wrapper">
+                  <button type="button" class="w-3.5 h-3.5 rounded-full border border-zinc-300 text-[9px] font-mono flex items-center justify-center">?</button>
+                  <div class="tooltip-content">Gross Profit Margin (margin laba kotor) dan Net Profit Margin (margin laba bersih akhir dari setiap Rp 100 penjualan).</div>
+                </div>
+              </div>
+              <span id="mMargins" class="font-bold tabular-nums text-sm text-zinc-950 block mt-1">0,0% / 0,0%</span>
+            </div>
+
+            <div class="p-2.5 rounded bg-zinc-50/70 border border-zinc-200/80">
+              <div class="flex items-center justify-between text-zinc-500 text-[11px]">
+                <span>Pertumbuhan Pendapatan</span>
+              </div>
+              <span id="mRevGrowth" class="font-bold tabular-nums text-sm text-zinc-950 block mt-1">0,00%</span>
+            </div>
+
+            <div class="p-2.5 rounded bg-zinc-50/70 border border-zinc-200/80">
+              <div class="flex items-center justify-between text-zinc-500 text-[11px]">
+                <span>PER / PBV Saat Ini</span>
+                <div class="tooltip-wrapper">
+                  <button type="button" class="w-3.5 h-3.5 rounded-full border border-zinc-300 text-[9px] font-mono flex items-center justify-center">?</button>
+                  <div class="tooltip-content">Valuasi pasar saat ini dibanding laba per saham (PER) dan nilai buku ekuitas per saham (PBV).</div>
+                </div>
+              </div>
+              <span id="mPerPbv" class="font-bold tabular-nums text-sm text-zinc-950 block mt-1">0,00x / 0,00x</span>
+            </div>
+
+            <div class="p-2.5 rounded bg-zinc-50/70 border border-zinc-200/80">
+              <div class="flex items-center justify-between text-zinc-500 text-[11px]">
+                <span>EPS / BVPS</span>
+              </div>
+              <span id="mEpsBvps" class="font-bold tabular-nums text-sm text-zinc-950 block mt-1">Rp 0 / Rp 0</span>
+            </div>
+
+            <div class="p-2.5 rounded bg-zinc-50/70 border border-zinc-200/80">
+              <div class="flex items-center justify-between text-zinc-500 text-[11px]">
+                <span>Free Cash Flow (FCF)</span>
+                <div class="tooltip-wrapper">
+                  <button type="button" class="w-3.5 h-3.5 rounded-full border border-zinc-300 text-[9px] font-mono flex items-center justify-center">?</button>
+                  <div class="tooltip-content">Sisa uang kas bersih setelah dikurangi belanja modal (OCF - CapEx) yang tersedia untuk dividen, ekspansi, atau pelunasan utang.</div>
+                </div>
+              </div>
+              <span id="mFcfTotal" class="font-bold tabular-nums text-sm text-zinc-950 block mt-1">Rp 0</span>
+            </div>
+
+            <div class="p-2.5 rounded bg-zinc-50/70 border border-zinc-200/80">
+              <div class="flex items-center justify-between text-zinc-500 text-[11px]">
+                <span>FCF / Saham &amp; OCF/NP</span>
+              </div>
+              <span id="mFcfShareOcf" class="font-bold tabular-nums text-sm text-zinc-950 block mt-1">Rp 0 (0,00x)</span>
+            </div>
+
+            <div class="p-2.5 rounded bg-zinc-50/70 border border-zinc-200/80">
+              <div class="flex items-center justify-between text-zinc-500 text-[11px]">
+                <span>Dividend Yield</span>
+              </div>
+              <span id="mDivYield" class="font-bold tabular-nums text-sm text-zinc-950 block mt-1">0,00%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- E. GRAFIK PROYEKSI DCF 10 TAHUN (CHART.JS MONOKROM) -->
+        <div class="bg-white border border-zinc-200 rounded-md p-6 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-100 pb-3 mb-4">
+            <div>
+              <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-950">
+                Proyeksi Arus Kas Bebas (DCF 10 Tahun)
+              </h3>
+              <p class="text-[11px] text-zinc-500 mt-0.5">
+                Perbandingan Proyeksi FCF/Saham Nominal vs Nilai Kini (Present Value) per tahun.
+              </p>
+            </div>
+            <div class="flex items-center gap-3 text-[11px] font-mono text-zinc-600">
+              <span class="inline-flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 bg-zinc-900 inline-block rounded-xs"></span> Nominal FCF/sh
+              </span>
+              <span class="inline-flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 bg-zinc-400 inline-block rounded-xs"></span> PV FCF/sh
+              </span>
+            </div>
+          </div>
+
+          <div class="relative h-64 w-full">
+            <canvas id="dcfChart"></canvas>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- ===================================================================== -->
+  <!-- CUSTOM MONOCHROME TOAST NOTIFICATION                                  -->
+  <!-- ===================================================================== -->
+  <div
+    id="toastNotification"
+    class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none max-w-sm w-full"
+  >
+    <div class="bg-zinc-950 text-white border border-zinc-700 rounded-md shadow-xl px-4 py-3 flex items-start gap-3">
+      <div class="w-2 h-2 rounded-full bg-white mt-1.5 shrink-0"></div>
+      <div class="flex-1 text-xs">
+        <p id="toastTitle" class="font-bold tracking-wide uppercase text-zinc-200">Notifikasi</p>
+        <p id="toastMessage" class="text-zinc-300 mt-0.5 leading-relaxed"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- CUSTOM MONOCHROME CONFIRMATION MODAL (PENGGANTI confirm() BROWSER)    -->
+  <!-- ===================================================================== -->
+  <div
+    id="confirmModal"
+    class="hidden fixed inset-0 z-50 bg-zinc-950/60 backdrop-blur-[1px] flex items-center justify-center p-4"
+  >
+    <div class="bg-white border border-zinc-300 rounded-md max-w-md w-full p-5 shadow-2xl">
+      <h3 class="text-sm font-bold text-zinc-950 uppercase tracking-wider">
+        Konfirmasi Penghapusan Data
+      </h3>
+      <p id="confirmModalMessage" class="text-xs text-zinc-600 mt-2 leading-relaxed">
+        Apakah Anda yakin ingin menghapus data analisis emiten ini secara permanen dari Google Sheets?
+      </p>
+      <div class="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-zinc-100">
+        <button
+          type="button"
+          id="btnCancelDelete"
+          class="px-3.5 py-1.5 text-xs font-medium text-zinc-700 bg-white border border-zinc-300 rounded hover:bg-zinc-100"
+        >
+          Batal
+        </button>
+        <button
+          type="button"
+          id="btnConfirmDelete"
+          class="px-3.5 py-1.5 text-xs font-semibold text-white bg-zinc-950 rounded hover:bg-zinc-800"
+        >
+          Ya, Hapus Permanen
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- JAVASCRIPT ENGINE: KALKULATOR FUNDAMENTAL, RATING & GOOGLE SHEETS API -->
+  <!-- ===================================================================== -->
+  <script>
+    (function () {
+      'use strict';
+
+      // Kunci penyimpanan URL Web App GAS di localStorage
+      const STORAGE_KEY_URL = 'sva_gas_webapp_url_v1';
+
+      // Deteksi otomatis apakah berjalan di lingkungan Google Apps Script Native
+      const isGasNative = (
+        typeof window.google !== 'undefined' &&
+        window.google.script &&
+        typeof window.google.script.run !== 'undefined'
+      );
+
+      // State global hasil kalkulasi terbaru & target hapus modal
+      let latestCalculationPayload = null;
+      let pendingDeleteTarget = null;
+      let dcfChartInstance = null;
+      let toastTimer = null;
+
+      // Daftar ID seluruh input numerik dan teks
+      const NUMERIC_FIELD_IDS = [
+        'current_price',
+        'shares_outstanding',
+        'hist_avg_per_5y',
+        'hist_avg_pbv_5y',
+        'dividend_per_share',
+        'revenue_current',
+        'revenue_prev_year',
+        'gross_profit',
+        'operating_profit',
+        'net_profit',
+        'non_halal_income',
+        'cash_and_equivalents',
+        'current_assets',
+        'total_assets',
+        'current_liabilities',
+        'interest_bearing_debt',
+        'total_equity',
+        'operating_cash_flow',
+        'capex',
+        'projected_growth_rate',
+        'terminal_growth_rate',
+        'discount_rate'
+      ];
+
+      // Field bernilai nominal besar yang menampilkan helper format ringkas (Miliar/Triliun/Rp)
+      const LARGE_HINT_FIELDS = [
+        'current_price',
+        'shares_outstanding',
+        'revenue_current',
+        'revenue_prev_year',
+        'gross_profit',
+        'operating_profit',
+        'net_profit',
+        'non_halal_income',
+        'cash_and_equivalents',
+        'current_assets',
+        'total_assets',
+        'current_liabilities',
+        'interest_bearing_debt',
+        'total_equity',
+        'operating_cash_flow',
+        'capex'
+      ];
+
+      // =====================================================================
+      // 1. HELPER FORMAT ANGKA & MATA UANG INDONESIA
+      // =====================================================================
+      function getNumericVal(id) {
+        const el = document.getElementById(id);
+        if (!el || el.value === '' || el.value === null) return 0;
+        const parsed = parseFloat(el.value);
+        return isNaN(parsed) || !isFinite(parsed) ? 0 : parsed;
+      }
+
+      function formatRupiah(value, decimals = 0) {
+        if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
+          return 'Rp 0';
+        }
+        const isNegative = value < 0;
+        const absVal = Math.abs(value);
+        const formatted = absVal.toLocaleString('id-ID', {
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: decimals
+        });
+        return (isNegative ? '-Rp ' : 'Rp ') + formatted;
+      }
+
+      function formatCompactNumber(value, isCurrency = true) {
+        if (!value || isNaN(value) || !isFinite(value)) return '';
+        const absVal = Math.abs(value);
+        const prefix = value < 0 ? (isCurrency ? '-Rp ' : '-') : (isCurrency ? 'Rp ' : '');
+        const suffix = isCurrency ? '' : ' lbr';
+
+        if (absVal >= 1e12) {
+          return prefix + (absVal / 1e12).toLocaleString('id-ID', { maximumFractionDigits: 2 }) + ' T' + suffix;
+        }
+        if (absVal >= 1e9) {
+          return prefix + (absVal / 1e9).toLocaleString('id-ID', { maximumFractionDigits: 2 }) + ' M' + suffix;
+        }
+        if (absVal >= 1e6) {
+          return prefix + (absVal / 1e6).toLocaleString('id-ID', { maximumFractionDigits: 2 }) + ' Jt' + suffix;
+        }
+        return prefix + absVal.toLocaleString('id-ID', { maximumFractionDigits: 0 }) + suffix;
+      }
+
+      function formatPercent(ratio, decimals = 2) {
+        if (!isFinite(ratio) || isNaN(ratio)) return '0,00%';
+        return (ratio * 100).toLocaleString('id-ID', {
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: decimals
+        }) + '%';
+      }
+
+      function formatMultiple(val, decimals = 2) {
+        if (!isFinite(val) || isNaN(val)) return '0,00x';
+        return val.toLocaleString('id-ID', {
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: decimals
+        }) + 'x';
+      }
+
+      function updateInputHints() {
+        LARGE_HINT_FIELDS.forEach(function (id) {
+          const hintEl = document.getElementById('hint_' + id);
+          if (!hintEl) return;
+          const val = getNumericVal(id);
+          if (val === 0) {
+            hintEl.textContent = '';
+          } else if (id === 'shares_outstanding') {
+            hintEl.textContent = '= ' + formatCompactNumber(val, false);
+          } else {
+            hintEl.textContent = '= ' + formatCompactNumber(val, true);
+          }
+        });
+      }
+
+      // =====================================================================
+      // 2. TOAST NOTIFICATION MONOKROM
+      // =====================================================================
+      function showToast(title, message) {
+        const toast = document.getElementById('toastNotification');
+        const titleEl = document.getElementById('toastTitle');
+        const msgEl = document.getElementById('toastMessage');
+
+        titleEl.textContent = title;
+        msgEl.textContent = message;
+
+        toast.classList.remove('translate-y-20', 'opacity-0', 'pointer-events-none');
+        toast.classList.add('translate-y-0', 'opacity-100');
+
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          toast.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+          toast.classList.remove('translate-y-0', 'opacity-100');
+        }, 4200);
+      }
+
+      // =====================================================================
+      // 3. INTI ENGINE KALKULATOR FUNDAMENTAL, VALUASI & RATING SYARIAH
+      // =====================================================================
+      function runValuationAndRating() {
+        updateInputHints();
+
+        // A. Ambil Seluruh Input Pengguna
+        const ticker = (document.getElementById('ticker').value || '').trim().toUpperCase();
+        const company_name = (document.getElementById('company_name').value || '').trim();
+        const period = (document.getElementById('period').value || '').trim();
+        const sector_type = document.getElementById('sector_type').value || 'DEFENSIVE';
+        const is_halal_core_business = document.getElementById('is_halal_core_business').checked;
+
+        const current_price = getNumericVal('current_price');
+        const shares_outstanding = getNumericVal('shares_outstanding');
+        const hist_avg_per_5y = getNumericVal('hist_avg_per_5y');
+        const hist_avg_pbv_5y = getNumericVal('hist_avg_pbv_5y');
+        const dividend_per_share = getNumericVal('dividend_per_share');
+
+        const revenue_current = getNumericVal('revenue_current');
+        const revenue_prev_year = getNumericVal('revenue_prev_year');
+        const gross_profit = getNumericVal('gross_profit');
+        const operating_profit = getNumericVal('operating_profit');
+        const net_profit = getNumericVal('net_profit');
+        const non_halal_income = getNumericVal('non_halal_income');
+
+        const cash_and_equivalents = getNumericVal('cash_and_equivalents');
+        const current_assets = getNumericVal('current_assets');
+        const total_assets = getNumericVal('total_assets');
+        const current_liabilities = getNumericVal('current_liabilities');
+        const interest_bearing_debt = getNumericVal('interest_bearing_debt');
+        const total_equity = getNumericVal('total_equity');
+
+        const operating_cash_flow = getNumericVal('operating_cash_flow');
+        const capex = getNumericVal('capex');
+
+        const projected_growth_rate = getNumericVal('projected_growth_rate');
+        const terminal_growth_rate = getNumericVal('terminal_growth_rate');
+        const discount_rate = getNumericVal('discount_rate');
+
+        // B. Rumus Rasio Keuangan & Syariah
+        const debt_to_asset_ratio = total_assets > 0 ? interest_bearing_debt / total_assets : 0;
+        const non_halal_ratio = revenue_current > 0 ? non_halal_income / revenue_current : 0;
+        const current_ratio = current_liabilities > 0 ? current_assets / current_liabilities : 0;
+        const net_cash = cash_and_equivalents - interest_bearing_debt;
+        const net_cash_status = net_cash > 0 ? 'NET CASH' : 'NET DEBT';
+        const cleansing_per_share = dividend_per_share * non_halal_ratio;
+
+        const revenue_growth = revenue_prev_year > 0
+          ? (revenue_current - revenue_prev_year) / revenue_prev_year
+          : 0;
+        const gpm = revenue_current > 0 ? gross_profit / revenue_current : 0;
+        const npm = revenue_current > 0 ? net_profit / revenue_current : 0;
+        const roe = total_equity > 0 ? net_profit / total_equity : 0;
+
+        const fcf = operating_cash_flow - capex;
+        const ocf_to_net_profit = net_profit > 0 ? operating_cash_flow / net_profit : 0;
+
+        const eps = shares_outstanding > 0 ? net_profit / shares_outstanding : 0;
+        const bvps = shares_outstanding > 0 ? total_equity / shares_outstanding : 0;
+        const fcf_per_share = shares_outstanding > 0 ? fcf / shares_outstanding : 0;
+
+        const current_per = eps > 0 ? current_price / eps : 0;
+        const current_pbv = bvps > 0 ? current_price / bvps : 0;
+        const dividend_yield = current_price > 0 ? dividend_per_share / current_price : 0;
+
+        // C. Valuasi Harga Wajar
+        const fair_value_per = Math.max(0, eps * hist_avg_per_5y);
+        const fair_value_pbv = Math.max(0, bvps * hist_avg_pbv_5y);
+
+        // Valuasi DCF 10 Tahun
+        const g = projected_growth_rate / 100;
+        const g_term = terminal_growth_rate / 100;
+        const r = discount_rate / 100;
+
+        let pv_fcf_10y = 0;
+        const dcfNominalSeries = [];
+        const dcfPvSeries = [];
+
+        for (let t = 1; t <= 10; t++) {
+          const projectedFcfShare = fcf_per_share > 0 ? fcf_per_share * Math.pow(1 + g, t) : 0;
+          const pvFcfShare = fcf_per_share > 0 ? projectedFcfShare / Math.pow(1 + r, t) : 0;
+          pv_fcf_10y += pvFcfShare;
+          dcfNominalSeries.push(Math.round(projectedFcfShare));
+          dcfPvSeries.push(Math.round(pvFcfShare));
+        }
+
+        const fcf_year_10 = fcf_per_share * Math.pow(1 + g, 10);
+        const terminal_value = (fcf_year_10 * (1 + g_term)) / Math.max(0.01, r - g_term);
+        const pv_terminal_value = terminal_value / Math.pow(1 + r, 10);
+        const fair_value_dcf = fcf_per_share > 0 ? Math.max(0, pv_fcf_10y + pv_terminal_value) : 0;
+
+        // Harga Wajar Gabungan (intrinsic_value)
+        const isCyclicalPerExcluded = (
+          sector_type === 'CYCLICAL' &&
+          (current_per < 6 || current_per > 25 || eps <= 0)
+        );
+
+        const candidateMethods = isCyclicalPerExcluded
+          ? [fair_value_pbv, fair_value_dcf]
+          : [fair_value_per, fair_value_pbv, fair_value_dcf];
+
+        const validMethods = candidateMethods.filter(function (v) { return v > 0; });
+        const intrinsic_value = validMethods.length > 0
+          ? validMethods.reduce(function (acc, cur) { return acc + cur; }, 0) / validMethods.length
+          : 0;
+
+        // Batas Harga Beli Maksimal (max_buy_price) sesuai Margin of Safety sektor
+        let mos = 0.20;
+        if (sector_type === 'GROWTH') mos = 0.25;
+        else if (sector_type === 'CYCLICAL') mos = 0.35;
+
+        const max_buy_price = intrinsic_value * (1 - mos);
+        const discount_percentage = intrinsic_value > 0
+          ? ((intrinsic_value - current_price) / intrinsic_value) * 100
+          : 0;
+
+        // D. Gerbang Eliminasi Syariah (Hard Gate)
+        const shariahViolations = [];
+        if (!is_halal_core_business) {
+          shariahViolations.push('Status Bisnis Utama Halal belum dicentang/terkonfirmasi.');
+        }
+        if (debt_to_asset_ratio > 0.45) {
+          shariahViolations.push(
+            'Rasio Utang Berbunga / Total Aset (' + formatPercent(debt_to_asset_ratio) + ') melampaui batas maksimal syariah 45,00%.'
+          );
+        }
+        if (non_halal_ratio > 0.10) {
+          shariahViolations.push(
+            'Rasio Pendapatan Non-Halal (' + formatPercent(non_halal_ratio) + ') melampaui batas maksimal syariah 10,00%.'
+          );
+        }
+
+        const passedShariahGate = shariahViolations.length === 0;
+
+        // E. Perhitungan Skor Kelayakan (0 - 100 Poin)
+        let scoreBalance = 0;
+        let scoreProfit = 0;
+        let scoreCash = 0;
+        let scoreValuation = 0;
+        let total_score = 0;
+        let rating_badge = '';
+        let gradeLetter = 'X';
+        let badgeClasses = '';
+
+        if (!passedShariahGate) {
+          total_score = 0;
+          rating_badge = 'REJECTED — TIDAK LOLOS FILTER SYARIAH';
+          gradeLetter = 'X';
+          badgeClasses = 'bg-white text-zinc-950 border-2 border-zinc-950';
+        } else {
+          // 1. Keamanan Neraca (Max 25 Poin)
+          let debtPts = 5;
+          if (debt_to_asset_ratio < 0.15) debtPts = 15;
+          else if (debt_to_asset_ratio <= 0.30) debtPts = 10;
+
+          let crPts = 2;
+          if (current_ratio >= 1.5) crPts = 10;
+          else if (current_ratio >= 1.2) crPts = 6;
+
+          scoreBalance = debtPts + crPts;
+
+          // 2. Profitabilitas & Moat (Max 25 Poin)
+          let roePts = 2;
+          if (roe >= 0.20) roePts = 15;
+          else if (roe >= 0.15) roePts = 12;
+          else if (roe >= 0.10) roePts = 7;
+
+          let npmGrowthPts = 2;
+          if (npm >= 0.10 && revenue_growth > 0) npmGrowthPts = 10;
+          else if (npm >= 0.10 || revenue_growth > 0) npmGrowthPts = 6;
+
+          scoreProfit = roePts + npmGrowthPts;
+
+          // 3. Kualitas Arus Kas (Max 25 Poin)
+          let ocfPts = 0;
+          if (operating_cash_flow > 0 && operating_cash_flow >= net_profit) ocfPts = 15;
+          else if (operating_cash_flow > 0) ocfPts = 9;
+
+          let fcfPts = fcf > 0 ? 10 : 2;
+          scoreCash = ocfPts + fcfPts;
+
+          // 4. Valuasi & Margin of Safety (Max 25 Poin)
+          if (intrinsic_value > 0 && current_price > 0 && current_price <= max_buy_price) {
+            scoreValuation = 25;
+          } else if (intrinsic_value > 0 && current_price > 0 && current_price < intrinsic_value) {
+            scoreValuation = 15;
+          } else {
+            scoreValuation = 5;
+          }
+
+          total_score = scoreBalance + scoreProfit + scoreCash + scoreValuation;
+
+          // Klasifikasi Rating Akhir Monokrom Kontras Tinggi
+          if (total_score >= 80) {
+            rating_badge = 'GRADE A (STRONG BUY) — Fundamental Prima & Harga Diskon';
+            gradeLetter = 'A';
+            badgeClasses = 'bg-zinc-950 text-white border border-zinc-950';
+          } else if (total_score >= 65) {
+            rating_badge = 'GRADE B (WATCHLIST) — Bisnis Sehat, Tunggu Harga Diskon';
+            gradeLetter = 'B';
+            badgeClasses = 'bg-zinc-700 text-white border border-zinc-700';
+          } else if (total_score >= 50) {
+            rating_badge = 'GRADE C (NEUTRAL) — Cermati Margin & Siklus Bisnis';
+            gradeLetter = 'C';
+            badgeClasses = 'bg-zinc-200 text-zinc-900 border border-zinc-400';
+          } else {
+            rating_badge = 'GRADE D (AVOID) — Fundamental Lemah atau Terlalu Mahal';
+            gradeLetter = 'D';
+            badgeClasses = 'bg-white text-zinc-900 border-2 border-zinc-900';
+          }
+        }
+
+        // F. Red Flag Warning Alerts
+        const redFlags = [];
+
+        if (net_profit > 0 && operating_cash_flow <= 0) {
+          redFlags.push({
+            code: 'PAPER_PROFIT_WARNING',
+            text: 'Waspada Laba Kertas: Perusahaan mencetak laba akuntansi, tetapi Arus Kas Operasi negatif (uang tunai belum masuk).'
+          });
+        }
+
+        if (debt_to_asset_ratio >= 0.38 && debt_to_asset_ratio <= 0.45) {
+          redFlags.push({
+            code: 'SYARIAH_BUFFER_WARNING',
+            text: 'Zona Kuning Syariah: Rasio utang berbunga mendekati batas maksimal 45% aset. Berisiko keluar dari DES.'
+          });
+        }
+
+        if (sector_type === 'CYCLICAL' && current_per > 0 && current_per < 6) {
+          redFlags.push({
+            code: 'CYCLICAL_PER_TRAP',
+            text: 'Jebakan PER Siklikal: PER tampak sangat murah karena laba kemungkinan sedang di puncak siklus. Prioritaskan PBV historis.'
+          });
+        }
+
+        if (intrinsic_value > 0 && current_price > intrinsic_value) {
+          redFlags.push({
+            code: 'OVERVALUED_ALERT',
+            text: 'Harga Pucuk / Overvalued: Harga pasar saat ini di atas nilai intrinsik. Tahan pembelian dan tunggu diskon.'
+          });
+        }
+
+        if (bvps > 0 && current_price > 0 && current_pbv < 0.7 && roe < 0.06) {
+          redFlags.push({
+            code: 'VALUE_TRAP_ALERT',
+            text: 'Potensi Value Trap: Valuasi PBV tampak murah, tetapi kemampuan menghasilkan laba (ROE) sangat rendah.'
+          });
+        }
+
+        // G. Render ke DOM
+        renderResultsToUI({
+          ticker,
+          company_name,
+          period,
+          sector_type,
+          passedShariahGate,
+          shariahViolations,
+          total_score,
+          gradeLetter,
+          rating_badge,
+          badgeClasses,
+          scoreBalance,
+          scoreProfit,
+          scoreCash,
+          scoreValuation,
+          mos,
+          current_price,
+          max_buy_price,
+          intrinsic_value,
+          discount_percentage,
+          fair_value_per,
+          fair_value_pbv,
+          fair_value_dcf,
+          isCyclicalPerExcluded,
+          redFlags,
+          debt_to_asset_ratio,
+          non_halal_ratio,
+          cleansing_per_share,
+          current_ratio,
+          net_cash,
+          net_cash_status,
+          roe,
+          gpm,
+          npm,
+          revenue_growth,
+          current_per,
+          current_pbv,
+          eps,
+          bvps,
+          fcf,
+          fcf_per_share,
+          ocf_to_net_profit,
+          dividend_yield,
+          dcfNominalSeries,
+          dcfPvSeries
+        });
+
+        // H. Simpan snapshot payload terstruktur untuk Google Sheets (37 Kolom)
+        latestCalculationPayload = {
+          Ticker: ticker,
+          Company_Name: company_name,
+          Period: period,
+          Sector_Type: sector_type,
+          Is_Halal_Core: is_halal_core_business,
+          Current_Price: current_price,
+          Shares_Outstanding: shares_outstanding,
+          Hist_Avg_PER_5Y: hist_avg_per_5y,
+          Hist_Avg_PBV_5Y: hist_avg_pbv_5y,
+          Dividend_Per_Share: dividend_per_share,
+          Revenue_Current: revenue_current,
+          Revenue_Prev_Year: revenue_prev_year,
+          Gross_Profit: gross_profit,
+          Operating_Profit: operating_profit,
+          Net_Profit: net_profit,
+          Non_Halal_Income: non_halal_income,
+          Cash_Equivalents: cash_and_equivalents,
+          Current_Assets: current_assets,
+          Total_Assets: total_assets,
+          Current_Liabilities: current_liabilities,
+          Interest_Bearing_Debt: interest_bearing_debt,
+          Total_Equity: total_equity,
+          Operating_Cash_Flow: operating_cash_flow,
+          CapEx: capex,
+          Projected_Growth: projected_growth_rate,
+          Terminal_Growth: terminal_growth_rate,
+          Discount_Rate: discount_rate,
+          Debt_To_Asset_Ratio: Number(debt_to_asset_ratio.toFixed(6)),
+          ROE: Number(roe.toFixed(6)),
+          FCF_Per_Share: Number(fcf_per_share.toFixed(2)),
+          Intrinsic_Value: Math.round(intrinsic_value),
+          Max_Buy_Price: Math.round(max_buy_price),
+          Discount_Pct: Number(discount_percentage.toFixed(2)),
+          Total_Score: total_score,
+          Rating_Badge: rating_badge,
+          Red_Flags: redFlags.length > 0 ? redFlags.map(function (rf) { return rf.code; }).join(', ') : 'NONE'
+        };
+      }
+
+      // =====================================================================
+      // 4. UPDATE TAMPILAN UI HASIL ANALISIS
+      // =====================================================================
+      function renderResultsToUI(res) {
+        // Header Emiten
+        document.getElementById('outTickerBadge').textContent = res.ticker || 'EMITEN';
+        document.getElementById('outPeriodBadge').textContent = res.period ? 'PERIODE ' + res.period : 'PERIODE —';
+        document.getElementById('outSectorBadge').textContent = res.sector_type;
+        document.getElementById('outCompanyName').textContent = res.company_name || (res.ticker ? 'Analisis Fundamental ' + res.ticker : 'Menunggu Input Data Emiten');
+
+        // Total Skor & Grade
+        document.getElementById('outTotalScore').textContent = res.total_score;
+        document.getElementById('outGradeLetter').textContent = res.gradeLetter;
+
+        // Rating Badge Utama
+        const badgeEl = document.getElementById('outRatingBadge');
+        badgeEl.className = 'w-full px-4 py-3 rounded text-xs sm:text-sm font-bold tracking-wide flex items-center justify-between transition-colors ' + res.badgeClasses;
+        badgeEl.innerHTML = '<span>' + escapeHtml(res.rating_badge) + '</span><span class="font-mono text-[11px] uppercase opacity-75 shrink-0 ml-2">RATING</span>';
+
+        // Gerbang Eliminasi Syariah
+        const gateBox = document.getElementById('shariahGateBox');
+        const gatePill = document.getElementById('shariahGateStatusPill');
+        const violationList = document.getElementById('shariahViolationList');
+
+        if (res.passedShariahGate) {
+          gateBox.className = 'mt-4 p-4 rounded border border-zinc-200 bg-zinc-50';
+          gatePill.className = 'text-[11px] font-mono font-semibold px-2 py-0.5 bg-zinc-200 text-zinc-900 rounded';
+          gatePill.textContent = 'LOLOS SYARIAH';
+          violationList.innerHTML = '<li class="list-none text-zinc-600">Seluruh kriteria utama syariah terpenuhi (Bisnis inti halal, Utang berbunga &le; 45% aset, Pendapatan non-halal &le; 10%).</li>';
+        } else {
+          gateBox.className = 'mt-4 p-4 rounded border border-zinc-400 hatch-pattern';
+          gatePill.className = 'text-[11px] font-mono font-semibold px-2 py-0.5 bg-zinc-950 text-white rounded';
+          gatePill.textContent = 'TIDAK LOLOS';
+          violationList.innerHTML = res.shariahViolations
+            .map(function (msg) { return '<li class="font-medium text-zinc-900">' + escapeHtml(msg) + '</li>'; })
+            .join('');
+        }
+
+        // Breakdown 4 Pilar
+        document.getElementById('scoreBalance').textContent = res.scoreBalance;
+        document.getElementById('barBalance').style.width = ((res.scoreBalance / 25) * 100) + '%';
+
+        document.getElementById('scoreProfit').textContent = res.scoreProfit;
+        document.getElementById('barProfit').style.width = ((res.scoreProfit / 25) * 100) + '%';
+
+        document.getElementById('scoreCash').textContent = res.scoreCash;
+        document.getElementById('barCash').style.width = ((res.scoreCash / 25) * 100) + '%';
+
+        document.getElementById('scoreValuation').textContent = res.scoreValuation;
+        document.getElementById('barValuation').style.width = ((res.scoreValuation / 25) * 100) + '%';
+
+        // Valuasi & Harga
+        document.getElementById('outMosPill').textContent = 'MoS Target: ' + Math.round(res.mos * 100) + '%';
+        document.getElementById('outCurrentPrice').textContent = formatRupiah(res.current_price);
+        document.getElementById('outMaxBuyPrice').textContent = formatRupiah(res.max_buy_price);
+        document.getElementById('outIntrinsicValue').textContent = formatRupiah(res.intrinsic_value);
+
+        const discSign = res.discount_percentage > 0 ? '+' : '';
+        document.getElementById('outDiscountPct').textContent =
+          'Margin Diskon: ' + discSign + res.discount_percentage.toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
+
+        const actionHintEl = document.getElementById('outPriceActionHint');
+        if (res.intrinsic_value <= 0 || res.current_price <= 0) {
+          actionHintEl.textContent = 'Lengkapi data valuasi';
+        } else if (res.current_price <= res.max_buy_price) {
+          actionHintEl.textContent = 'AREA BELI (UNDERVALUED + MoS)';
+        } else if (res.current_price < res.intrinsic_value) {
+          actionHintEl.textContent = 'Di bawah wajar, belum masuk MoS';
+        } else {
+          actionHintEl.textContent = 'Di atas harga wajar (Mahal)';
+        }
+
+        document.getElementById('outFairPer').textContent = formatRupiah(res.fair_value_per);
+        document.getElementById('outFairPerNote').textContent = res.isCyclicalPerExcluded
+          ? 'Dikecualikan (Siklikal)'
+          : (res.fair_value_per > 0 ? 'Aktif' : 'N/A');
+
+        document.getElementById('outFairPbv').textContent = formatRupiah(res.fair_value_pbv);
+        document.getElementById('outFairDcf').textContent = formatRupiah(res.fair_value_dcf);
+
+        // Red Flag Alerts (border-l-4 border-zinc-900)
+        const rfContainer = document.getElementById('redFlagContainer');
+        document.getElementById('outRedFlagCount').textContent = res.redFlags.length + ' Peringatan';
+
+        if (res.redFlags.length === 0) {
+          rfContainer.innerHTML =
+            '<div class="p-3.5 rounded bg-zinc-50 border border-zinc-200 text-xs text-zinc-600">' +
+            'Tidak ada red flag terdeteksi pada konfigurasi angka saat ini.' +
+            '</div>';
+        } else {
+          rfContainer.innerHTML = res.redFlags
+            .map(function (rf) {
+              return (
+                '<div class="p-3.5 rounded-r bg-zinc-50 border border-zinc-200 border-l-4 border-l-zinc-900 text-xs text-zinc-900">' +
+                '<span class="font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-500 block mb-0.5">' +
+                escapeHtml(rf.code) +
+                '</span>' +
+                '<p class="leading-relaxed font-medium">' + escapeHtml(rf.text) + '</p>' +
+                '</div>'
+              );
+            })
+            .join('');
+        }
+
+        // Matriks Rasio
+        document.getElementById('outNetCashBadge').textContent =
+          res.net_cash_status + ': ' + formatCompactNumber(res.net_cash, true).replace(/^$/, 'Rp 0');
+
+        document.getElementById('mDebtToAsset').textContent = formatPercent(res.debt_to_asset_ratio);
+        document.getElementById('mNonHalalRatio').textContent = formatPercent(res.non_halal_ratio);
+        document.getElementById('mCleansing').textContent = formatRupiah(res.cleansing_per_share, 2);
+        document.getElementById('mCurrentRatio').textContent = formatMultiple(res.current_ratio);
+        document.getElementById('mRoe').textContent = formatPercent(res.roe);
+        document.getElementById('mMargins').textContent = formatPercent(res.gpm, 1) + ' / ' + formatPercent(res.npm, 1);
+        document.getElementById('mRevGrowth').textContent = formatPercent(res.revenue_growth);
+        document.getElementById('mPerPbv').textContent = formatMultiple(res.current_per) + ' / ' + formatMultiple(res.current_pbv);
+        document.getElementById('mEpsBvps').textContent = formatRupiah(res.eps, 1) + ' / ' + formatRupiah(res.bvps, 1);
+        document.getElementById('mFcfTotal').textContent = formatCompactNumber(res.fcf, true) || 'Rp 0';
+        document.getElementById('mFcfShareOcf').textContent = formatRupiah(res.fcf_per_share, 1) + ' (' + formatMultiple(res.ocf_to_net_profit) + ')';
+        document.getElementById('mDivYield').textContent = formatPercent(res.dividend_yield);
+
+        // Update Chart.js DCF
+        updateDcfChart(res.dcfNominalSeries, res.dcfPvSeries);
+      }
+
+      // =====================================================================
+      // 5. CHART.JS MONOKROM PROYEKSI DCF 10 TAHUN
+      // =====================================================================
+      function initDcfChart() {
+        const ctx = document.getElementById('dcfChart').getContext('2d');
+        const labels = ['Thn 1', 'Thn 2', 'Thn 3', 'Thn 4', 'Thn 5', 'Thn 6', 'Thn 7', 'Thn 8', 'Thn 9', 'Thn 10'];
+
+        dcfChartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: 'Nominal FCF / Saham (Rp)',
+                data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                backgroundColor: '#18181B',
+                borderRadius: 2,
+                barPercentage: 0.72,
+                categoryPercentage: 0.78
+              },
+              {
+                label: 'Present Value FCF / Saham (Rp)',
+                data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                backgroundColor: '#A1A1AA',
+                borderRadius: 2,
+                barPercentage: 0.72,
+                categoryPercentage: 0.78
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              mode: 'index',
+              intersect: false
+            },
+            plugins: {
+              legend: {
+                display: false
+              },
+              tooltip: {
+                backgroundColor: '#09090B',
+                titleColor: '#FAFAFA',
+                bodyColor: '#E4E4E7',
+                borderColor: '#3F3F46',
+                borderWidth: 1,
+                padding: 10,
+                titleFont: { family: 'Inter', size: 12, weight: 'bold' },
+                bodyFont: { family: 'JetBrains Mono', size: 11 },
+                callbacks: {
+                  label: function (context) {
+                    const val = context.parsed.y || 0;
+                    return ' ' + context.dataset.label + ': Rp ' + val.toLocaleString('id-ID');
+                  }
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: {
+                  display: false
+                },
+                ticks: {
+                  color: '#52525B',
+                  font: { family: 'JetBrains Mono', size: 10 }
+                }
+              },
+              y: {
+                beginAtZero: true,
+                grid: {
+                  color: '#E4E4E7',
+                  drawBorder: false
+                },
+                ticks: {
+                  color: '#71717A',
+                  font: { family: 'JetBrains Mono', size: 10 },
+                  callback: function (value) {
+                    return 'Rp ' + Number(value).toLocaleString('id-ID');
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+
+      function updateDcfChart(nominalSeries, pvSeries) {
+        if (!dcfChartInstance) return;
+        dcfChartInstance.data.datasets[0].data = nominalSeries;
+        dcfChartInstance.data.datasets[1].data = pvSeries;
+        dcfChartInstance.update('none');
+      }
+
+      // =====================================================================
+      // 6. INTEGRASI GOOGLE SHEETS (DUAL MODE: google.script.run & fetch API)
+      // =====================================================================
+      function initConnectionBanner() {
+        const bar = document.getElementById('gasConnectionBar');
+        const dot = document.getElementById('connectionDot');
+        const label = document.getElementById('connectionStatusLabel');
+        const urlControls = document.getElementById('webAppUrlControls');
+        const urlInput = document.getElementById('gasWebAppUrl');
+
+        if (isGasNative) {
+          // Otomatis bypass input URL jika berjalan langsung dalam lingkungan GAS Web App
+          dot.className = 'w-2 h-2 rounded-full bg-zinc-950';
+          label.textContent = 'Terhubung Langsung (Google Apps Script Native Environment)';
+          urlControls.classList.add('hidden');
+        } else {
+          const savedUrl = localStorage.getItem(STORAGE_KEY_URL) || '';
+          urlInput.value = savedUrl;
+          if (savedUrl) {
+            dot.className = 'w-2 h-2 rounded-full bg-zinc-900';
+            label.textContent = 'URL Web App Tersimpan di Browser';
+          } else {
+            dot.className = 'w-2 h-2 rounded-full bg-zinc-400';
+            label.textContent = 'Masukkan URL Web App GAS untuk sinkronisasi lokal';
+          }
+        }
+      }
+
+      function getWebAppUrl() {
+        const inputVal = (document.getElementById('gasWebAppUrl').value || '').trim();
+        if (inputVal) {
+          localStorage.setItem(STORAGE_KEY_URL, inputVal);
+          return inputVal;
+        }
+        return localStorage.getItem(STORAGE_KEY_URL) || '';
+      }
+
+      async function saveToGoogleSheets() {
+        runValuationAndRating();
+
+        if (!latestCalculationPayload || !latestCalculationPayload.Ticker) {
+          showToast('Validasi Input', 'Harap isi Kode Saham (Ticker) terlebih dahulu sebelum menyimpan ke Google Sheets.');
+          document.getElementById('ticker').focus();
+          return;
+        }
+
+        const btnSave = document.getElementById('btnSaveSheets');
+        const originalHtml = btnSave.innerHTML;
+        btnSave.disabled = true;
+        btnSave.textContent = 'Menyimpan...';
+
+        try {
+          if (isGasNative) {
+            await new Promise(function (resolve, reject) {
+              window.google.script.run
+                .withSuccessHandler(function (res) {
+                  if (res && res.status === 'success') {
+                    showToast('Tersimpan di Sheets', res.message);
+                    resolve(res);
+                  } else {
+                    reject(new Error((res && res.message) || 'Terjadi kesalahan saat menyimpan.'));
+                  }
+                })
+                .withFailureHandler(function (err) {
+                  reject(err);
+                })
+                .saveEmitenData(latestCalculationPayload);
+            });
+          } else {
+            const webAppUrl = getWebAppUrl();
+            if (!webAppUrl) {
+              throw new Error('URL Google Apps Script Web App belum diisi pada panel koneksi di bagian atas.');
+            }
+
+            const response = await fetch(webAppUrl, {
+              method: 'POST',
+              redirect: 'follow',
+              headers: {
+                'Content-Type': 'text/plain;charset=utf-8'
+              },
+              body: JSON.stringify({
+                action: 'save',
+                data: latestCalculationPayload
+              })
+            });
+
+            const resJson = await response.json();
+            if (resJson.status !== 'success') {
+              throw new Error(resJson.message || 'Gagal menyimpan data melalui Web App.');
+            }
+
+            showToast('Tersimpan di Sheets', resJson.message);
+          }
+
+          // Jika drawer riwayat sedang terbuka, perbarui tabel otomatis
+          const historySection = document.getElementById('sheetsHistorySection');
+          if (!historySection.classList.contains('hidden')) {
+            loadFromGoogleSheets(true);
+          }
+        } catch (error) {
+          showToast('Gagal Menyimpan', error.message);
+        } finally {
+          btnSave.disabled = false;
+          btnSave.innerHTML = originalHtml;
+        }
+      }
+
+      async function loadFromGoogleSheets(silent = false) {
+        const historySection = document.getElementById('sheetsHistorySection');
+        const tbody = document.getElementById('sheetsHistoryBody');
+        historySection.classList.remove('hidden');
+
+        tbody.innerHTML =
+          '<tr><td colspan="10" class="px-4 py-6 text-center text-zinc-500 font-mono text-xs">' +
+          'Mengambil data dari sheet Database_Emiten...' +
+          '</td></tr>';
+
+        try {
+          let records = [];
+
+          if (isGasNative) {
+            records = await new Promise(function (resolve, reject) {
+              window.google.script.run
+                .withSuccessHandler(function (res) {
+                  if (res && res.status === 'success') {
+                    resolve(res.data || []);
+                  } else {
+                    reject(new Error((res && res.message) || 'Gagal membaca data dari Sheets.'));
+                  }
+                })
+                .withFailureHandler(function (err) {
+                  reject(err);
+                })
+                .getAllEmitenData();
+            });
+          } else {
+            const webAppUrl = getWebAppUrl();
+            if (!webAppUrl) {
+              throw new Error('URL Google Apps Script Web App belum diisi pada panel atas.');
+            }
+
+            const separator = webAppUrl.indexOf('?') === -1 ? '?' : '&';
+            const response = await fetch(webAppUrl + separator + 'action=read', {
+              method: 'GET',
+              redirect: 'follow'
+            });
+
+            const resJson = await response.json();
+            if (resJson.status !== 'success') {
+              throw new Error(resJson.message || 'Gagal membaca data dari Web App.');
+            }
+            records = resJson.data || [];
+          }
+
+          renderHistoryTable(records);
+          if (!silent) {
+            showToast('Data Dimuat', 'Ditemukan ' + records.length + ' riwayat emiten pada Database_Emiten.');
+          }
+        } catch (error) {
+          tbody.innerHTML =
+            '<tr><td colspan="10" class="px-4 py-6 text-center text-zinc-800 font-medium text-xs">' +
+            escapeHtml(error.message) +
+            '</td></tr>';
+          if (!silent) {
+            showToast('Koneksi Gagal', error.message);
+          }
+        }
+      }
+
+      function renderHistoryTable(records) {
+        const tbody = document.getElementById('sheetsHistoryBody');
+
+        if (!records || records.length === 0) {
+          tbody.innerHTML =
+            '<tr><td colspan="10" class="px-4 py-6 text-center text-zinc-500 text-xs">' +
+            'Belum ada data analisis tersimpan di sheet Database_Emiten.' +
+            '</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = '';
+
+        records.forEach(function (row) {
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-zinc-50 transition-colors';
+
+          tr.innerHTML =
+            '<td class="px-3 py-2.5 font-mono font-bold text-zinc-950">' + escapeHtml(row.Ticker || '-') + '</td>' +
+            '<td class="px-3 py-2.5 text-zinc-700">' + escapeHtml(row.Company_Name || '-') + '</td>' +
+            '<td class="px-3 py-2.5 font-mono text-zinc-600">' + escapeHtml(row.Period || '-') + '</td>' +
+            '<td class="px-3 py-2.5 font-mono text-zinc-600">' + escapeHtml(row.Sector_Type || '-') + '</td>' +
+            '<td class="px-3 py-2.5 text-right tabular-nums text-zinc-900">' + formatRupiah(Number(row.Current_Price || 0)) + '</td>' +
+            '<td class="px-3 py-2.5 text-right tabular-nums text-zinc-900">' + formatRupiah(Number(row.Intrinsic_Value || 0)) + '</td>' +
+            '<td class="px-3 py-2.5 text-right tabular-nums font-semibold text-zinc-950">' + formatRupiah(Number(row.Max_Buy_Price || 0)) + '</td>' +
+            '<td class="px-3 py-2.5 text-center font-mono font-bold text-zinc-950">' + Number(row.Total_Score || 0) + '</td>' +
+            '<td class="px-3 py-2.5 text-zinc-700 max-w-[220px] truncate" title="' + escapeHtml(row.Rating_Badge || '') + '">' + escapeHtml(row.Rating_Badge || '-') + '</td>' +
+            '<td class="px-3 py-2.5 text-right whitespace-nowrap space-x-1.5">' +
+              '<button type="button" class="btn-row-load px-2.5 py-1 text-[11px] font-semibold bg-zinc-900 text-white rounded hover:bg-zinc-700">Muat</button>' +
+              '<button type="button" class="btn-row-delete px-2.5 py-1 text-[11px] font-medium bg-white text-zinc-700 border border-zinc-300 rounded hover:bg-zinc-100 hover:text-zinc-950">Hapus</button>' +
+            '</td>';
+
+          tr.querySelector('.btn-row-load').addEventListener('click', function () {
+            populateFormFromRecord(row);
+          });
+
+          tr.querySelector('.btn-row-delete').addEventListener('click', function () {
+            openDeleteModal(row.Ticker, row.Period);
+          });
+
+          tbody.appendChild(tr);
+        });
+      }
+
+      function populateFormFromRecord(row) {
+        document.getElementById('ticker').value = row.Ticker || '';
+        document.getElementById('company_name').value = row.Company_Name || '';
+        document.getElementById('period').value = row.Period || '';
+        document.getElementById('sector_type').value = row.Sector_Type || 'DEFENSIVE';
+        document.getElementById('is_halal_core_business').checked = Boolean(row.Is_Halal_Core);
+
+        const mapping = {
+          current_price: row.Current_Price,
+          shares_outstanding: row.Shares_Outstanding,
+          hist_avg_per_5y: row.Hist_Avg_PER_5Y,
+          hist_avg_pbv_5y: row.Hist_Avg_PBV_5Y,
+          dividend_per_share: row.Dividend_Per_Share,
+          revenue_current: row.Revenue_Current,
+          revenue_prev_year: row.Revenue_Prev_Year,
+          gross_profit: row.Gross_Profit,
+          operating_profit: row.Operating_Profit,
+          net_profit: row.Net_Profit,
+          non_halal_income: row.Non_Halal_Income,
+          cash_and_equivalents: row.Cash_Equivalents,
+          current_assets: row.Current_Assets,
+          total_assets: row.Total_Assets,
+          current_liabilities: row.Current_Liabilities,
+          interest_bearing_debt: row.Interest_Bearing_Debt,
+          total_equity: row.Total_Equity,
+          operating_cash_flow: row.Operating_Cash_Flow,
+          capex: row.CapEx,
+          projected_growth_rate: row.Projected_Growth !== '' && row.Projected_Growth !== undefined ? row.Projected_Growth : 7,
+          terminal_growth_rate: row.Terminal_Growth !== '' && row.Terminal_Growth !== undefined ? row.Terminal_Growth : 3,
+          discount_rate: row.Discount_Rate !== '' && row.Discount_Rate !== undefined ? row.Discount_Rate : 12
+        };
+
+        Object.keys(mapping).forEach(function (fieldId) {
+          const el = document.getElementById(fieldId);
+          if (el) {
+            const val = mapping[fieldId];
+            el.value = (val === null || val === undefined || val === 0) ? (['projected_growth_rate', 'terminal_growth_rate', 'discount_rate'].includes(fieldId) ? val : '') : val;
+          }
+        });
+
+        runValuationAndRating();
+        document.getElementById('sheetsHistorySection').classList.add('hidden');
+        showToast('Emiten Dimuat', 'Data ' + (row.Ticker || '') + ' (' + (row.Period || '-') + ') berhasil dimuat ke kalkulator.');
+      }
+
+      // Modal Konfirmasi Hapus (Pengganti confirm() bawaan)
+      function openDeleteModal(ticker, period) {
+        pendingDeleteTarget = { ticker: ticker, period: period };
+        document.getElementById('confirmModalMessage').textContent =
+          'Apakah Anda yakin ingin menghapus data ' + ticker + ' (' + (period || '-') + ') secara permanen dari sheet Database_Emiten?';
+        document.getElementById('confirmModal').classList.remove('hidden');
+      }
+
+      function closeDeleteModal() {
+        pendingDeleteTarget = null;
+        document.getElementById('confirmModal').classList.add('hidden');
+      }
+
+      async function executeDeleteEmiten() {
+        if (!pendingDeleteTarget) return;
+        const { ticker, period } = pendingDeleteTarget;
+        const btnConfirm = document.getElementById('btnConfirmDelete');
+        btnConfirm.disabled = true;
+        btnConfirm.textContent = 'Menghapus...';
+
+        try {
+          if (isGasNative) {
+            await new Promise(function (resolve, reject) {
+              window.google.script.run
+                .withSuccessHandler(function (res) {
+                  if (res && res.status === 'success') {
+                    showToast('Data Dihapus', res.message);
+                    resolve(res);
+                  } else {
+                    reject(new Error((res && res.message) || 'Gagal menghapus data.'));
+                  }
+                })
+                .withFailureHandler(function (err) {
+                  reject(err);
+                })
+                .deleteEmitenData(ticker, period);
+            });
+          } else {
+            const webAppUrl = getWebAppUrl();
+            if (!webAppUrl) {
+              throw new Error('URL Google Apps Script Web App belum dikonfigurasi.');
+            }
+
+            const response = await fetch(webAppUrl, {
+              method: 'POST',
+              redirect: 'follow',
+              headers: {
+                'Content-Type': 'text/plain;charset=utf-8'
+              },
+              body: JSON.stringify({
+                action: 'delete',
+                ticker: ticker,
+                period: period
+              })
+            });
+
+            const resJson = await response.json();
+            if (resJson.status !== 'success') {
+              throw new Error(resJson.message || 'Gagal menghapus data.');
+            }
+
+            showToast('Data Dihapus', resJson.message);
+          }
+
+          closeDeleteModal();
+          loadFromGoogleSheets(true);
+        } catch (error) {
+          showToast('Gagal Menghapus', error.message);
+        } finally {
+          btnConfirm.disabled = false;
+          btnConfirm.textContent = 'Ya, Hapus Permanen';
+        }
+      }
+
+      // =====================================================================
+      // 7. RESET / KOSONGKAN FORM & BINDING EVENT
+      // =====================================================================
+      function resetFormToEmpty() {
+        document.getElementById('analyzerForm').reset();
+        // Pastikan asumsi DCF kembali ke nilai default wajar (7%, 3%, 12%)
+        document.getElementById('projected_growth_rate').value = '7';
+        document.getElementById('terminal_growth_rate').value = '3';
+        document.getElementById('discount_rate').value = '12';
+        document.getElementById('is_halal_core_business').checked = false;
+
+        runValuationAndRating();
+        showToast('Form Dikosongkan', 'Seluruh kolom input telah dibersihkan untuk analisis emiten baru.');
+      }
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      // Inisialisasi saat DOM siap
+      document.addEventListener('DOMContentLoaded', function () {
+        initConnectionBanner();
+        initDcfChart();
+        runValuationAndRating();
+
+        // Auto-uppercase pada input Ticker
+        const tickerInput = document.getElementById('ticker');
+        tickerInput.addEventListener('input', function () {
+          const cursor = this.selectionStart;
+          this.value = this.value.toUpperCase();
+          this.setSelectionRange(cursor, cursor);
+          runValuationAndRating();
+        });
+
+        // Kalkulasi real-time untuk seluruh elemen form
+        const form = document.getElementById('analyzerForm');
+        form.addEventListener('input', runValuationAndRating);
+        form.addEventListener('change', runValuationAndRating);
+
+        // Tombol aksi utama
+        document.getElementById('btnCalculateNow').addEventListener('click', function () {
+          runValuationAndRating();
+          showToast('Kalkulasi Diperbarui', 'Skor fundamental, filter syariah, dan harga wajar telah dihitung ulang.');
+        });
+
+        document.getElementById('btnResetForm').addEventListener('click', resetFormToEmpty);
+        document.getElementById('btnSaveSheets').addEventListener('click', saveToGoogleSheets);
+        document.getElementById('btnLoadSheets').addEventListener('click', function () {
+          loadFromGoogleSheets(false);
+        });
+
+        document.getElementById('btnCloseHistory').addEventListener('click', function () {
+          document.getElementById('sheetsHistorySection').classList.add('hidden');
+        });
+
+        document.getElementById('btnSaveUrl').addEventListener('click', function () {
+          const url = getWebAppUrl();
+          if (url) {
+            initConnectionBanner();
+            showToast('URL Disimpan', 'Endpoint Google Apps Script Web App berhasil disimpan di browser.');
+          } else {
+            showToast('URL Kosong', 'Masukkan URL Web App Google Apps Script yang valid terlebih dahulu.');
+          }
+        });
+
+        // Event listener modal konfirmasi hapus
+        document.getElementById('btnCancelDelete').addEventListener('click', closeDeleteModal);
+        document.getElementById('btnConfirmDelete').addEventListener('click', executeDeleteEmiten);
+      });
+    })();
+  </script>
+</body>
+</html>
